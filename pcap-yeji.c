@@ -10,7 +10,7 @@
 #define TCP_HEADER_LEN 20
 #define MAX_DATA_LEN 20
 
-// 결합된 구조체 정의
+
 struct libnet_packet_hdr {
     // Ethernet Header
     uint8_t  ether_dhost[ETHER_ADDR_LEN]; // destination ethernet address
@@ -28,7 +28,7 @@ struct libnet_packet_hdr {
     uint16_t th_dport;                    // destination port
 };
 
-// MAC 주소를 출력하는 함수
+// MAC 
 void print_mac_address(const uint8_t* addr) {
     for (int i = 0; i < ETHER_ADDR_LEN; i++) { 
 	if (i > 0) {
@@ -39,18 +39,18 @@ void print_mac_address(const uint8_t* addr) {
     printf("\n");
 }
 
-// IP 주소를 출력하는 함수
+// IP 
 void print_ip_address(const struct in_addr* addr) {
     printf("%s\n", inet_ntoa(*addr));
 }
 
-// TCP 포트를 출력하는 함수
+// TCP
 void print_tcp_ports(uint16_t src_port, uint16_t dst_port) {
     printf("Source Port: %u\n", ntohs(src_port));
     printf("Destination Port: %u\n", ntohs(dst_port));
 }
 
-// 데이터 부분을 출력하는 함수
+// 데이터 부분
 void print_data(const u_char* data, int length) {
     printf("Data (max 20 bytes): ");
     for (int i = 0; i < length && i < MAX_DATA_LEN; i++) {
@@ -104,27 +104,12 @@ int main(int argc, char* argv[]) {
             printf("pcap_next_ex return %d(%s)\n", res, pcap_geterr(pcap));
             break;
         }
-        //printf("%u bytes captured\n", header->caplen);
 
-        // Ethernet Header를 추출합니다.
+        // Ethernet Header 추출
         struct libnet_packet_hdr *eth_hdr = (struct libnet_packet_hdr *)packet;
-        // Destination MAC Address 출력
-        printf("Destination MAC: ");
-        print_mac_address(eth_hdr->ether_dhost);
 
-        // Source MAC Address 출력
-        printf("\nSource MAC: ");
-        print_mac_address(eth_hdr->ether_shost);
-
-        printf("Source IP: ");
-        print_ip_address(&eth_hdr->ip_src);
-
-        // Destination IP Address 출력
-        printf("Destination IP: ");
-        print_ip_address(&eth_hdr->ip_dst);
-
-        // IP Header의 오프셋을 계산하여 IP 주소를 추출합니다.
-        // IP Header는 Ethernet Header 바로 뒤에 위치합니다.
+        // IP Header 오프셋 계산하여 IP 주소 추출
+        // IP Header는 Ethernet Header 바로 뒤에 위치
         const u_char *ip_header = packet + sizeof(struct libnet_packet_hdr);
         uint16_t ip_header_len = (ip_header[0] & 0x0F) * 4;
         
@@ -136,15 +121,26 @@ int main(int argc, char* argv[]) {
         uint16_t src_port = ntohs(*(uint16_t *)(tcp_header));
         uint16_t dst_port = ntohs(*(uint16_t *)(tcp_header + 2));
 
-        // TCP 포트 출력
-        print_tcp_ports(src_port, dst_port);
-
-        // 데이터 부분 추출 및 출력
+        // 데이터 부분
         const u_char *data = tcp_header + tcp_header_len;
         int data_len = header->caplen - (sizeof(struct libnet_packet_hdr) + ip_header_len + tcp_header_len);
         if (data_len > 0) {
             print_data(data, data_len);
         }
+	    
+	print_tcp_ports(src_port, dst_port);
+	    
+        printf("Destination MAC: ");
+        print_mac_address(eth_hdr->ether_dhost);
+
+        printf("\nSource MAC: ");
+        print_mac_address(eth_hdr->ether_shost);
+
+        printf("Source IP: ");
+        print_ip_address(&eth_hdr->ip_src);
+
+        printf("Destination IP: ");
+        print_ip_address(&eth_hdr->ip_dst);
     }
 
     pcap_close(pcap);
